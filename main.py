@@ -1,15 +1,17 @@
+from app.application import Application
 from config.settings import settings
 
 
-def main():
-    print("=" * 40)
-    print(f"      {settings.APP_NAME}")
-    print(f"        Version {settings.VERSION}")
-    print("=" * 40)
-    print("\nInitializing Jarvis...\n")
-    print("✅ Configuration Loaded")
-    print("🚀 Jarvis is Ready!")
+def banner():
+    print("=" * 45)
+    print(f"        {settings.APP_NAME}")
+    print(f"          Version {settings.VERSION}")
+    print("=" * 45)
+    print()
 
 
 if __name__ == "__main__":
-    main()
+    banner()
+
+    app = Application()
+    app.run()
