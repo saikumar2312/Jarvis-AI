@@ -17,9 +17,9 @@ class Assistant:
 
         while self.running:
 
-            command = input("Jarvis > ")
+            command = input("Jarvis > ").strip()
 
-            if not command.strip():
+            if not command:
                 continue
 
             if command.lower() in ["exit", "quit"]:
