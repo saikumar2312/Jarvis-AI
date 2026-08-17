@@ -3,16 +3,14 @@ Routes user commands to the appropriate module.
 """
 
 from ai.manager import AIManager
-from memory.memory_manager import MemoryManager
-from automation.desktop import DesktopManager
+from tools.registry import ToolRegistry
 
 
 class Router:
 
     def __init__(self):
         self.ai = AIManager()
-        self.memory = MemoryManager()
-        self.desktop = DesktopManager()
+        self.tools = ToolRegistry()
 
     def route(self, command: str):
 
@@ -21,7 +19,7 @@ class Router:
         if not command:
             return ""
 
-        lower_command = command.lower()
+        lower_command = command.lower().strip()
 
         # -------------------------
         # Basic commands
@@ -53,7 +51,10 @@ class Router:
             if content.lower().startswith("that "):
                 content = content[5:].strip()
 
-            return self.memory.remember(content)
+            return self.tools.execute(
+                "remember",
+                content=content,
+            )
 
         recall_commands = {
             "what do you remember",
@@ -68,7 +69,9 @@ class Router:
 
         if lower_command in recall_commands:
 
-            memories = self.memory.recall_all()
+            memories = self.tools.execute(
+                "recall_memories"
+            )
 
             if not memories:
                 return "I don't have any memories yet."
@@ -81,7 +84,7 @@ class Router:
             return "\n".join(lines)
 
         # -------------------------
-        # Desktop automation
+        # Desktop
         # -------------------------
 
         if lower_command.startswith("open "):
@@ -91,7 +94,10 @@ class Router:
             if not application:
                 return "Please tell me which application to open."
 
-            return self.desktop.open_application(application)
+            return self.tools.execute(
+                "open_application",
+                application=application,
+            )
 
         # -------------------------
         # AI
