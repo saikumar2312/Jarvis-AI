@@ -2,23 +2,69 @@
 Natural-language intent detection for Jarvis.
 """
 
+import re
 from difflib import SequenceMatcher
 
 
 class IntentManager:
 
+    OPEN_WORDS = [
+        "open",
+        "launch",
+        "start",
+    ]
+
     def _similar(self, text: str, target: str, threshold: float = 0.75) -> bool:
-        """Check whether two pieces of text are reasonably similar."""
         return SequenceMatcher(
             None,
             text.lower(),
             target.lower(),
         ).ratio() >= threshold
 
+    def _extract_application(self, command: str) -> str | None:
+        """
+        Try to extract an application name from a natural-language request.
+        """
+
+        text = command.strip()
+
+        # Common sentence patterns.
+        patterns = [
+            r"(?:can you|could you|please|would you)?\s*"
+            r"(?:open|launch|start)\s+(?:my\s+)?(.+?)(?:\s+for me)?[?.!]*$",
+
+            r"(?:i want to|i need to|i'd like to)\s+"
+            r"(?:open|launch|start)\s+(?:my\s+)?(.+?)[?.!]*$",
+
+            r"(?:open|launch|start)\s+(?:the\s+)?"
+            r"(?:app|application)?\s*(.+?)[?.!]*$",
+        ]
+
+        for pattern in patterns:
+
+            match = re.match(
+                pattern,
+                text,
+                re.IGNORECASE,
+            )
+
+            if match:
+                application = match.group(1).strip()
+
+                # Remove common trailing words.
+                application = re.sub(
+                    r"\s+(app|application)$",
+                    "",
+                    application,
+                    flags=re.IGNORECASE,
+                )
+
+                if application:
+                    return application
+
+        return None
+
     def detect(self, command: str) -> dict:
-        """
-        Detect the user's intended action.
-        """
 
         original = command.strip()
         text = original.lower()
@@ -39,79 +85,42 @@ class IntentManager:
                 "content": content,
             }
 
-        if any(
-            phrase in text
-            for phrase in [
-                "what do you remember",
-                "what are my memories",
-                "show my memories",
-                "list my memories",
-            ]
-        ):
+        # -------------------------
+        # Recall
+        # -------------------------
+
+        recall_phrases = [
+            "what do you remember",
+            "what are my memories",
+            "show my memories",
+            "list my memories",
+            "what have you remembered",
+        ]
+
+        if any(phrase in text for phrase in recall_phrases):
             return {
                 "intent": "recall_memories",
             }
 
         # -------------------------
-        # Direct application commands
+        # Application opening
         # -------------------------
 
-        for phrase in ["open ", "launch ", "start "]:
+        application = self._extract_application(original)
 
-            if text.startswith(phrase):
+        if application:
 
-                application = original[len(phrase):].strip()
+            # Handle common typo: "oprn"
+            if "oprn" in application.lower():
+                application = application.lower().replace(
+                    "oprn",
+                    "open",
+                )
 
-                return {
-                    "intent": "open_application",
-                    "application": application,
-                }
-
-        # -------------------------
-        # Natural language
-        # -------------------------
-
-        if (
-            "open" in text
-            and "notes" in text
-        ):
             return {
                 "intent": "open_application",
-                "application": "Notes",
+                "application": application,
             }
-
-        if (
-            "open" in text
-            and (
-                "music" in text
-                or "apple music" in text
-            )
-        ):
-            return {
-                "intent": "open_application",
-                "application": "Apple Music",
-            }
-
-        if "open" in text and "calculator" in text:
-            return {
-                "intent": "open_application",
-                "application": "Calculator",
-            }
-
-        # -------------------------
-        # Handle common typos
-        # -------------------------
-
-        words = text.split()
-
-        for word in words:
-
-            if self._similar(word, "oprn"):
-                if "notes" in words:
-                    return {
-                        "intent": "open_application",
-                        "application": "Notes",
-                    }
 
         # -------------------------
         # Chat
