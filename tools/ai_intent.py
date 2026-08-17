@@ -14,6 +14,13 @@ class AIIntentDetector:
         self.ai = AIManager()
 
     def detect(self, command: str) -> dict:
+        """
+        Ask Qwen to classify the user's request.
+
+        The AI only returns an intent and value.
+        Actual actions are handled later by ToolRegistry.
+        """
+
         prompt = f"""
 You are the intent classifier for Jarvis.
 
@@ -28,7 +35,16 @@ Available tools:
 3. recall_memories
    Use this when the user asks what Jarvis remembers.
 
-4. chat
+4. list_documents
+   Use this when the user wants to see what is inside their Documents folder.
+
+5. create_folder
+   Use this when the user wants to create a new folder inside Documents.
+
+6. create_text_file
+   Use this when the user wants to create a text file inside Documents.
+
+7. chat
    Use this for normal questions and conversation.
 
 User request:
@@ -44,13 +60,27 @@ open_application|Notes
 open_application|Safari
 remember|My favorite language is Python
 recall_memories|
+list_documents|
+create_folder|Projects
+create_text_file|notes.txt
 chat|
 
-Do not explain your answer.
-Do not use markdown.
+Rules:
+
+- Do not explain your answer.
+- Do not use markdown.
+- Return only one intent.
+- For create_folder, return only the folder name as the value.
+- For create_text_file, return only the file name as the value.
+- Never return shell commands.
+- Never return file paths.
 """
 
         response = self.ai.ask(prompt).strip()
+
+        # --------------------------------
+        # Validate response format
+        # --------------------------------
 
         if "|" not in response:
             return {
@@ -63,10 +93,17 @@ Do not use markdown.
         intent = intent.strip()
         value = value.strip()
 
+        # --------------------------------
+        # Allowed intents
+        # --------------------------------
+
         allowed = {
             "open_application",
             "remember",
             "recall_memories",
+            "list_documents",
+            "create_folder",
+            "create_text_file",
             "chat",
         }
 
@@ -76,25 +113,99 @@ Do not use markdown.
                 "message": command,
             }
 
+        # --------------------------------
+        # Open application
+        # --------------------------------
+
         if intent == "open_application":
+
+            if not value:
+                return {
+                    "intent": "chat",
+                    "message": command,
+                }
+
             return {
-                "intent": intent,
+                "intent": "open_application",
                 "application": value,
             }
 
+        # --------------------------------
+        # Remember
+        # --------------------------------
+
         if intent == "remember":
+
+            if not value:
+                return {
+                    "intent": "chat",
+                    "message": command,
+                }
+
             return {
-                "intent": intent,
+                "intent": "remember",
                 "content": value,
             }
 
+        # --------------------------------
+        # Recall memories
+        # --------------------------------
+
         if intent == "recall_memories":
+
             return {
-                "intent": intent,
+                "intent": "recall_memories",
             }
+
+        # --------------------------------
+        # List Documents
+        # --------------------------------
+
+        if intent == "list_documents":
+
+            return {
+                "intent": "list_documents",
+            }
+
+        # --------------------------------
+        # Create folder
+        # --------------------------------
+
+        if intent == "create_folder":
+
+            if not value:
+                return {
+                    "intent": "chat",
+                    "message": command,
+                }
+
+            return {
+                "intent": "create_folder",
+                "name": value,
+            }
+
+        # --------------------------------
+        # Create text file
+        # --------------------------------
+
+        if intent == "create_text_file":
+
+            if not value:
+                return {
+                    "intent": "chat",
+                    "message": command,
+                }
+
+            return {
+                "intent": "create_text_file",
+                "name": value,
+            }
+
+        # --------------------------------
+        # Normal conversation
+        # --------------------------------
 
         return {
             "intent": "chat",
             "message": command,
         }
-        

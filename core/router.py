@@ -40,6 +40,9 @@ class Router:
                 "- remember <something>\n"
                 "- what do you remember?\n"
                 "- open <application>\n"
+                "- show my Documents\n"
+                "- create a folder <name>\n"
+                "- create a text file <name>\n"
                 "- exit\n"
                 "- Anything else will be sent to AI."
             )
@@ -100,11 +103,29 @@ class Router:
             ai_detected = self.ai_intent.detect(command)
             ai_intent = ai_detected["intent"]
 
+            # -------------------------
+            # AI → Open application
+            # -------------------------
+
+            if ai_intent == "open_application":
+                return self.tools.execute(
+                    "open_application",
+                    application=ai_detected["application"],
+                )
+
+            # -------------------------
+            # AI → Remember
+            # -------------------------
+
             if ai_intent == "remember":
                 return self.tools.execute(
                     "remember",
                     content=ai_detected["content"],
                 )
+
+            # -------------------------
+            # AI → Recall memories
+            # -------------------------
 
             if ai_intent == "recall_memories":
 
@@ -122,14 +143,39 @@ class Router:
 
                 return "\n".join(lines)
 
-            if ai_intent == "open_application":
+            # -------------------------
+            # AI → List Documents
+            # -------------------------
+
+            if ai_intent == "list_documents":
                 return self.tools.execute(
-                    "open_application",
-                    application=ai_detected["application"],
+                    "list_documents"
                 )
 
-            # If the AI classifier also doesn't detect a tool,
-            # treat the request as normal conversation.
+            # -------------------------
+            # AI → Create Folder
+            # -------------------------
+
+            if ai_intent == "create_folder":
+                return self.tools.execute(
+                    "create_folder",
+                    name=ai_detected["name"],
+                )
+
+            # -------------------------
+            # AI → Create Text File
+            # -------------------------
+
+            if ai_intent == "create_text_file":
+                return self.tools.execute(
+                    "create_text_file",
+                    name=ai_detected["name"],
+                )
+
+            # -------------------------
+            # AI → Normal conversation
+            # -------------------------
+
             return self.ai.ask(command)
 
         # -------------------------

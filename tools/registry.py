@@ -17,6 +17,9 @@ class ToolRegistry:
             "open_application",
             "remember",
             "recall_memories",
+            "list_documents",
+            "create_folder",
+            "create_text_file",
         ]
 
     def execute(self, tool_name: str, **kwargs):
@@ -34,5 +37,18 @@ class ToolRegistry:
 
         if tool_name == "recall_memories":
             return self.tools.recall_memories()
+
+        if tool_name == "list_documents":
+            return self.tools.list_documents()
+
+        if tool_name == "create_folder":
+            return self.tools.create_folder(
+                kwargs["name"]
+            )
+
+        if tool_name == "create_text_file":
+            return self.tools.create_text_file(
+                kwargs["name"]
+            )
 
         raise ValueError(f"Unknown tool: {tool_name}")
