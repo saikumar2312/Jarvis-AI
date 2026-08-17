@@ -1,15 +1,12 @@
-# Virtual Environment
+# Python virtual environment
 .venv/
 
-# Python
+# Python cache
 __pycache__/
-*.py[cod]
+*.pyc
 
-# Environment
-.env
+# Jarvis local memory database
+memory/jarvis.db
 
-# macOS
-.DS_Store
-
-# Logs
+# Jarvis runtime logs
 logs/
