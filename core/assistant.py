@@ -1,5 +1,5 @@
 """
-Main Assistant.
+Main Jarvis assistant loop.
 """
 
 from core.router import Router
@@ -17,13 +17,17 @@ class Assistant:
 
         while self.running:
 
-            command = input("Jarvis > ").strip()
+            try:
+                command = input("Jarvis > ").strip()
+
+            except (KeyboardInterrupt, EOFError):
+                print("\n👋 Goodbye!")
+                break
 
             if not command:
                 continue
 
             if command.lower() in ["exit", "quit"]:
-
                 print("👋 Goodbye!")
                 self.running = False
                 break
@@ -32,5 +36,7 @@ class Assistant:
 
             response = self.router.route(command)
 
-            print(response)
+            if response:
+                print(response)
+
             print()
