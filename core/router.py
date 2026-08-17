@@ -4,6 +4,8 @@ Routes user commands to the appropriate module.
 
 from ai.manager import AIManager
 from tools.registry import ToolRegistry
+from tools.intent import IntentManager
+from tools.ai_intent import AIIntentDetector
 
 
 class Router:
@@ -11,6 +13,8 @@ class Router:
     def __init__(self):
         self.ai = AIManager()
         self.tools = ToolRegistry()
+        self.intent = IntentManager()
+        self.ai_intent = AIIntentDetector()
 
     def route(self, command: str):
 
@@ -19,20 +23,20 @@ class Router:
         if not command:
             return ""
 
-        lower_command = command.lower().strip()
-
         # -------------------------
         # Basic commands
         # -------------------------
 
-        if lower_command == "hello":
+        if command.lower() == "hello":
             return "Hello Sai! 👋"
 
-        if lower_command == "help":
+        if command.lower() in ["exit", "quit"]:
+            return "Goodbye!"
+
+        if command.lower() == "help":
             return (
                 "Commands:\n"
                 "- hello\n"
-                "- help\n"
                 "- remember <something>\n"
                 "- what do you remember?\n"
                 "- open <application>\n"
@@ -41,33 +45,27 @@ class Router:
             )
 
         # -------------------------
+        # Rule-based intent
+        # -------------------------
+
+        detected = self.intent.detect(command)
+        intent = detected["intent"]
+
+        # -------------------------
         # Memory
         # -------------------------
 
-        if lower_command.startswith("remember "):
-
-            content = command[len("remember "):].strip()
-
-            if content.lower().startswith("that "):
-                content = content[5:].strip()
-
+        if intent == "remember":
             return self.tools.execute(
                 "remember",
-                content=content,
+                content=detected["content"],
             )
 
-        recall_commands = {
-            "what do you remember",
-            "what do you remember?",
-            "show my memories",
-            "show my memories?",
-            "list my memories",
-            "list my memories?",
-            "what are my memories",
-            "what are my memories?",
-        }
+        # -------------------------
+        # Recall memories
+        # -------------------------
 
-        if lower_command in recall_commands:
+        if intent == "recall_memories":
 
             memories = self.tools.execute(
                 "recall_memories"
@@ -84,23 +82,58 @@ class Router:
             return "\n".join(lines)
 
         # -------------------------
-        # Desktop
+        # Open application
         # -------------------------
 
-        if lower_command.startswith("open "):
-
-            application = command[5:].strip()
-
-            if not application:
-                return "Please tell me which application to open."
-
+        if intent == "open_application":
             return self.tools.execute(
                 "open_application",
-                application=application,
+                application=detected["application"],
             )
 
         # -------------------------
-        # AI
+        # AI-assisted fallback
         # -------------------------
 
-        return self.ai.ask(command)
+        if intent == "unknown":
+
+            ai_detected = self.ai_intent.detect(command)
+            ai_intent = ai_detected["intent"]
+
+            if ai_intent == "remember":
+                return self.tools.execute(
+                    "remember",
+                    content=ai_detected["content"],
+                )
+
+            if ai_intent == "recall_memories":
+
+                memories = self.tools.execute(
+                    "recall_memories"
+                )
+
+                if not memories:
+                    return "I don't have any memories yet."
+
+                lines = ["Here is what I remember:"]
+
+                for _, content, _ in memories:
+                    lines.append(f"- {content}")
+
+                return "\n".join(lines)
+
+            if ai_intent == "open_application":
+                return self.tools.execute(
+                    "open_application",
+                    application=ai_detected["application"],
+                )
+
+            # If the AI classifier also doesn't detect a tool,
+            # treat the request as normal conversation.
+            return self.ai.ask(command)
+
+        # -------------------------
+        # Normal AI conversation
+        # -------------------------
+
+        return self.ai.ask(detected["message"])

@@ -127,6 +127,6 @@ class IntentManager:
         # -------------------------
 
         return {
-            "intent": "chat",
-            "message": original,
-        }
+    "intent": "unknown",
+    "message": original,
+}
