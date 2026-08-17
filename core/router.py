@@ -1,20 +1,19 @@
 """
-Routes commands to the appropriate module.
+Routes user commands to the appropriate module.
 """
 
-from ai.providers.ollama import OllamaProvider
+from ai.manager import AIManager
 
 
 class Router:
 
     def __init__(self):
-        self.ai = OllamaProvider()
+        self.ai = AIManager()
 
     def route(self, command: str):
 
         command = command.strip()
 
-        # Built-in commands
         if command.lower() == "hello":
             return "Hello Sai! 👋"
 
@@ -27,5 +26,4 @@ class Router:
                 "- Anything else will be sent to AI."
             )
 
-        # Everything else goes to AI
         return self.ai.ask(command)
