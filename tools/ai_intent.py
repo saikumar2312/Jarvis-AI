@@ -1,8 +1,8 @@
 """
 AI-assisted intent detection for Jarvis.
 
-The AI is only used to classify requests.
-It does not execute commands.
+The AI only decides what the user wants.
+It never executes tools directly.
 """
 
 from ai.manager import AIManager
@@ -14,85 +14,145 @@ class AIIntentDetector:
         self.ai = AIManager()
 
     def detect(self, command: str) -> dict:
-        """
-        Ask Qwen to classify the user's request.
-
-        The AI only returns an intent and value.
-        Actual actions are handled later by ToolRegistry.
-        """
 
         prompt = f"""
-You are the intent classifier for Jarvis.
+You are Jarvis's intent classifier.
 
-Available tools:
+Your job is ONLY to classify the user's request.
+
+Available intents:
 
 1. open_application
-   Use this when the user wants to open or launch a Mac application.
+Open a macOS application.
 
-2. remember
-   Use this when the user wants Jarvis to remember information.
+Examples:
+Open Notes
+Launch Safari
+Start Calculator
 
-3. recall_memories
-   Use this when the user asks what Jarvis remembers.
+2. open_file
+Open a specific file or document from the user's Documents folder.
 
-4. list_documents
-   Use this when the user wants to see what is inside their Documents folder.
+Examples:
+Open my internship report
+Open my presentation
+Launch my project file
+Open Social-Internship-Report.key
 
-5. create_folder
-   Use this when the user wants to create a new folder inside Documents.
+IMPORTANT:
+If the user says "open", "launch", or "start" and is referring
+to a document, report, presentation, file, or something that
+sounds like a personal file, ALWAYS use open_file.
 
-6. create_text_file
-   Use this when the user wants to create a text file inside Documents.
+3. remember
+Save information to Jarvis memory.
 
-7. search_documents
-   Use this when the user wants to find a file or folder inside Documents.
+Examples:
+Remember that I like Python
+Keep in mind that I am building Jarvis
 
-8. read_text_file
-   Use this when the user wants Jarvis to read the contents of a supported text file.
+4. recall_memories
+Tell the user what Jarvis remembers.
 
-9. chat
-   Use this for normal questions and conversation.
+Examples:
+What do you remember?
+What have you remembered about me?
+
+5. list_documents
+Show the contents of the Documents folder.
+
+Examples:
+Show me my Documents
+What is inside my Documents folder?
+List my files
+
+6. create_folder
+Create a folder inside Documents.
+
+7. create_text_file
+Create a text file inside Documents.
+
+8. search_documents
+SEARCH for a file when the user explicitly asks to find,
+search, locate, or look for something.
+
+Examples:
+Find my internship report
+Search for my Python files
+Locate my project
+
+IMPORTANT:
+"Find" or "search" means search_documents.
+"Open" means open_file when referring to a file.
+
+9. read_text_file
+Read the contents of a supported text file.
+
+Examples:
+Read notes.txt
+Read my text file
+
+10. chat
+Normal questions and conversation.
 
 User request:
 {command}
 
-Return ONLY one line in this exact format:
+Return ONLY:
 
 intent|value
 
 Examples:
 
-open_application|Notes
-open_application|Safari
-remember|My favorite language is Python
-recall_memories|
-list_documents|
-create_folder|Projects
-create_text_file|notes.txt
-search_documents|internship
-read_text_file|notes.txt
-chat|
+Open Notes
+→ open_application|Notes
+
+Open my internship report
+→ open_file|internship report
+
+Open my presentation
+→ open_file|presentation
+
+Open Social-Internship-Report.key
+→ open_file|Social-Internship-Report.key
+
+Find my internship report
+→ search_documents|internship report
+
+Search for my Python files
+→ search_documents|Python
+
+Read notes.txt
+→ read_text_file|notes.txt
+
+Remember that I prefer Python
+→ remember|I prefer Python
+
+What do you remember?
+→ recall_memories|
+
+Show my Documents
+→ list_documents|
+
+What is machine learning?
+→ chat|
 
 Rules:
 
-- Do not explain your answer.
+- Return exactly one intent.
+- Return exactly one line.
+- Do not explain.
 - Do not use markdown.
-- Return only one intent.
-- For open_application, return only the application name.
-- For remember, return only the information to remember.
-- For create_folder, return only the folder name.
-- For create_text_file, return only the file name.
-- For search_documents, return only the search term.
-- For read_text_file, return only the file name.
-- Never return shell commands.
-- Never return file paths.
+- Do not return shell commands.
+- Do not return absolute paths.
+- "open" + application → open_application.
+- "open" + file/document/report/presentation/project → open_file.
+- "find", "search", "locate", or "look for" → search_documents.
+- For open_file, return the user's description of the file.
+- For search_documents, return the search terms.
 """
 
         response = self.ai.ask(prompt).strip()
-
-        # --------------------------------
-        # Validate response format
-        # --------------------------------
 
         if "|" not in response:
             return {
@@ -105,12 +165,9 @@ Rules:
         intent = intent.strip()
         value = value.strip()
 
-        # --------------------------------
-        # Allowed intents
-        # --------------------------------
-
         allowed = {
             "open_application",
+            "open_file",
             "remember",
             "recall_memories",
             "list_documents",
@@ -127,131 +184,57 @@ Rules:
                 "message": command,
             }
 
-        # --------------------------------
-        # Open application
-        # --------------------------------
-
         if intent == "open_application":
-
-            if not value:
-                return {
-                    "intent": "chat",
-                    "message": command,
-                }
-
             return {
                 "intent": "open_application",
                 "application": value,
             }
 
-        # --------------------------------
-        # Remember
-        # --------------------------------
+        if intent == "open_file":
+            return {
+                "intent": "open_file",
+                "name": value,
+            }
 
         if intent == "remember":
-
-            if not value:
-                return {
-                    "intent": "chat",
-                    "message": command,
-                }
-
             return {
                 "intent": "remember",
                 "content": value,
             }
 
-        # --------------------------------
-        # Recall memories
-        # --------------------------------
-
         if intent == "recall_memories":
-
             return {
                 "intent": "recall_memories",
             }
 
-        # --------------------------------
-        # List Documents
-        # --------------------------------
-
         if intent == "list_documents":
-
             return {
                 "intent": "list_documents",
             }
 
-        # --------------------------------
-        # Create folder
-        # --------------------------------
-
         if intent == "create_folder":
-
-            if not value:
-                return {
-                    "intent": "chat",
-                    "message": command,
-                }
-
             return {
                 "intent": "create_folder",
                 "name": value,
             }
 
-        # --------------------------------
-        # Create text file
-        # --------------------------------
-
         if intent == "create_text_file":
-
-            if not value:
-                return {
-                    "intent": "chat",
-                    "message": command,
-                }
-
             return {
                 "intent": "create_text_file",
                 "name": value,
             }
 
-        # --------------------------------
-        # Search Documents
-        # --------------------------------
-
         if intent == "search_documents":
-
-            if not value:
-                return {
-                    "intent": "chat",
-                    "message": command,
-                }
-
             return {
                 "intent": "search_documents",
                 "query": value,
             }
 
-        # --------------------------------
-        # Read Text File
-        # --------------------------------
-
         if intent == "read_text_file":
-
-            if not value:
-                return {
-                    "intent": "chat",
-                    "message": command,
-                }
-
             return {
                 "intent": "read_text_file",
                 "name": value,
             }
-
-        # --------------------------------
-        # Normal conversation
-        # --------------------------------
 
         return {
             "intent": "chat",

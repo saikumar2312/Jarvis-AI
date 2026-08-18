@@ -22,6 +22,7 @@ class ToolRegistry:
             "create_text_file",
             "search_documents",
             "read_text_file",
+            "open_file",
         ]
 
     def execute(self, tool_name: str, **kwargs):
@@ -72,6 +73,11 @@ class ToolRegistry:
 
         if tool_name == "read_text_file":
             return self.tools.read_text_file(
+                kwargs["name"]
+            )
+
+        if tool_name == "open_file":
+            return self.tools.open_file(
                 kwargs["name"]
             )
 

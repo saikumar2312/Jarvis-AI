@@ -49,3 +49,6 @@ class ToolManager:
 
     def read_text_file(self, name: str) -> str:
         return self.files.read_text_file(name)
+
+    def open_file(self, name: str) -> str:
+        return self.files.open_file(name)
