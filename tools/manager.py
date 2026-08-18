@@ -43,3 +43,9 @@ class ToolManager:
 
     def create_text_file(self, name: str) -> str:
         return self.files.create_text_file(name)
+
+    def search_documents(self, query: str) -> str:
+        return self.files.search_documents(query)
+
+    def read_text_file(self, name: str) -> str:
+        return self.files.read_text_file(name)

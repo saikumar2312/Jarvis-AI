@@ -43,6 +43,8 @@ class Router:
                 "- show my Documents\n"
                 "- create a folder <name>\n"
                 "- create a text file <name>\n"
+                "- find/search a file\n"
+                "- read a text file\n"
                 "- exit\n"
                 "- Anything else will be sent to AI."
             )
@@ -104,7 +106,7 @@ class Router:
             ai_intent = ai_detected["intent"]
 
             # -------------------------
-            # AI → Open application
+            # Open application
             # -------------------------
 
             if ai_intent == "open_application":
@@ -114,7 +116,7 @@ class Router:
                 )
 
             # -------------------------
-            # AI → Remember
+            # Remember
             # -------------------------
 
             if ai_intent == "remember":
@@ -124,7 +126,7 @@ class Router:
                 )
 
             # -------------------------
-            # AI → Recall memories
+            # Recall memories
             # -------------------------
 
             if ai_intent == "recall_memories":
@@ -144,7 +146,7 @@ class Router:
                 return "\n".join(lines)
 
             # -------------------------
-            # AI → List Documents
+            # List Documents
             # -------------------------
 
             if ai_intent == "list_documents":
@@ -153,7 +155,7 @@ class Router:
                 )
 
             # -------------------------
-            # AI → Create Folder
+            # Create Folder
             # -------------------------
 
             if ai_intent == "create_folder":
@@ -163,7 +165,7 @@ class Router:
                 )
 
             # -------------------------
-            # AI → Create Text File
+            # Create Text File
             # -------------------------
 
             if ai_intent == "create_text_file":
@@ -173,7 +175,27 @@ class Router:
                 )
 
             # -------------------------
-            # AI → Normal conversation
+            # Search Documents
+            # -------------------------
+
+            if ai_intent == "search_documents":
+                return self.tools.execute(
+                    "search_documents",
+                    query=ai_detected["query"],
+                )
+
+            # -------------------------
+            # Read Text File
+            # -------------------------
+
+            if ai_intent == "read_text_file":
+                return self.tools.execute(
+                    "read_text_file",
+                    name=ai_detected["name"],
+                )
+
+            # -------------------------
+            # Normal AI conversation
             # -------------------------
 
             return self.ai.ask(command)

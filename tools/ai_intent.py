@@ -44,7 +44,13 @@ Available tools:
 6. create_text_file
    Use this when the user wants to create a text file inside Documents.
 
-7. chat
+7. search_documents
+   Use this when the user wants to find a file or folder inside Documents.
+
+8. read_text_file
+   Use this when the user wants Jarvis to read the contents of a supported text file.
+
+9. chat
    Use this for normal questions and conversation.
 
 User request:
@@ -63,6 +69,8 @@ recall_memories|
 list_documents|
 create_folder|Projects
 create_text_file|notes.txt
+search_documents|internship
+read_text_file|notes.txt
 chat|
 
 Rules:
@@ -70,8 +78,12 @@ Rules:
 - Do not explain your answer.
 - Do not use markdown.
 - Return only one intent.
-- For create_folder, return only the folder name as the value.
-- For create_text_file, return only the file name as the value.
+- For open_application, return only the application name.
+- For remember, return only the information to remember.
+- For create_folder, return only the folder name.
+- For create_text_file, return only the file name.
+- For search_documents, return only the search term.
+- For read_text_file, return only the file name.
 - Never return shell commands.
 - Never return file paths.
 """
@@ -104,6 +116,8 @@ Rules:
             "list_documents",
             "create_folder",
             "create_text_file",
+            "search_documents",
+            "read_text_file",
             "chat",
         }
 
@@ -198,6 +212,40 @@ Rules:
 
             return {
                 "intent": "create_text_file",
+                "name": value,
+            }
+
+        # --------------------------------
+        # Search Documents
+        # --------------------------------
+
+        if intent == "search_documents":
+
+            if not value:
+                return {
+                    "intent": "chat",
+                    "message": command,
+                }
+
+            return {
+                "intent": "search_documents",
+                "query": value,
+            }
+
+        # --------------------------------
+        # Read Text File
+        # --------------------------------
+
+        if intent == "read_text_file":
+
+            if not value:
+                return {
+                    "intent": "chat",
+                    "message": command,
+                }
+
+            return {
+                "intent": "read_text_file",
                 "name": value,
             }
 
